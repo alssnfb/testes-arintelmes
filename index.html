@@ -1,0 +1,629 @@
+<!--
+atual versão main4 para edição
+-->
+ 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <title>AR Intelmes</title>
+    <link rel="icon" href="https://img.icons8.com/ios_filled/200/40C057/info.png">
+    <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="script.js" defer></script>
+   
+    <script>
+ 
+function initAR() {
+    const scene = document.querySelector("#a-scene");
+    scene.style.display = "block";
+}
+ 
+// FUNCTION GAUGES
+// mudança do carregamento dos gauges, agora sem botão e carregar automático
+        // pra carregar os gauges
+        document.addEventListener('DOMContentLoaded', () => {
+            const gaugesGroup = document.getElementById("gauges-group");
+            gaugesGroup.setAttribute("visible", "true");
+            initializeGauges();
+            simulateProductionBarChange();
+        });
+ 
+        // Função para gerar um valor aleatório entre dois números
+        function getRandomValue(min, max) {
+            return Math.random() * (max - min) + min;
+        }
+ 
+        // Atualiza os gauges gradualmente
+        function simulateGaugeChange(textId, ringId, currentValue) {
+            const newValue = getRandomValue(0, 100); // Gera um novo valor aleatório
+            let step = (newValue - currentValue) / 100; // Define o passo de mudança gradual
+ 
+            const interval = setInterval(() => {
+                if (Math.abs(newValue - currentValue) < Math.abs(step)) {
+                    currentValue = newValue; // Finaliza o valor
+                    clearInterval(interval);
+                } else {
+                    currentValue += step; // Atualiza gradualmente
+                }
+                updateGauge(currentValue, textId, ringId);
+            }, 100); // Atualiza a cada 50ms para uma transição suave
+        }
+ 
+        // Inicializa os gauges
+        function initializeGauges() {
+            let OEEValue = 100, DispValue = 100, PerfValue = 100, QualValue = 100;
+ 
+            setInterval(() => {
+                simulateGaugeChange('text-OEE', 'ring-OEE', OEEValue);
+                simulateGaugeChange('text-Disponibilidade', 'ring-Disponibilidade', DispValue);
+                simulateGaugeChange('text-Performance', 'ring-Performance', PerfValue);
+                simulateGaugeChange('text-Qualidade', 'ring-Qualidade', QualValue);
+            }, 10000); // A cada 10 segundos, simula uma nova atualização de todos os gauges
+        }
+ 
+        // Atualiza os gauges
+        function updateGauge(value, textId, ringId) {
+            const textEntity = document.getElementById(textId);
+            const ringEntity = document.getElementById(ringId);
+ 
+            if (textEntity && ringEntity) {
+                textEntity.setAttribute('value', textId.split('-')[1] + ': ' + Math.round(value) + '%');
+ 
+                const greenValue = Math.floor((value / 100) * 255);
+                const redValue = 255 - greenValue;
+                const color = `rgb(${redValue}, ${greenValue}, 0)`;
+                ringEntity.setAttribute('color', color);
+ 
+                const thetaLength = (value / 100) * 360;
+                ringEntity.setAttribute('theta-length', thetaLength);
+            } else {
+                alert("Element not found:", textId, ringId);
+            }
+        }
+ 
+// Funções que atualizam a barra de preenchimento para manter a escala correta
+function updateProductionBar(value) {
+    const barFill = document.getElementById("production-bar-fill");
+ 
+    if (barFill) {
+        // Atualiza a escala da barra de preenchimento
+        const fillScale = value / 100; // Ajusta a escala conforme o valor
+        barFill.setAttribute("scale", `${fillScale * 1.3} 0.1 0.1`); // Escala ajustada para o comprimento total
+        // Atualiza a posição da barra de preenchimento para que fique corretamente alinhada
+        barFill.setAttribute("position", `${(fillScale * 1.3 / 2) - 0.65} 0 0`); // Posiciona à frente do início
+    }
+}
+ 
+// Função de simular porcentagem similar a dos gauges
+function simulateProductionBarChange() {
+    let productionValue = 0;
+    let step = 1; // Incremento para o preenchimento
+ 
+    const interval = setInterval(() => {
+        if (productionValue >= 100) {
+            productionValue = 0; // Reinicia a barra após chegar a 100%
+        } else {
+            productionValue += step; // Atualiza gradualmente
+        }
+        updateProductionBar(productionValue);
+    }, 100); // Atualiza a cada 100ms
+}
+ 
+ 
+// HORAS
+ 
+AFRAME.registerComponent("hours", {
+init: function () {
+const hoursNum = document.getElementById("hours");
+ 
+fetch("https://www.random.org/integers/?num=1&min=0&max=150&col=1&base=10&format=plain&rnd=new")
+    .then((response) => response.text())
+    .then((data) => {
+        const hours = data.trim(); // Remove espaços em branco
+        const hoursConcat = `${hours} h`; // Adiciona "h" ao valor
+        hoursNum.setAttribute("value", hoursConcat); // Define o valor com "h"
+    })
+    .catch((error) => alert("Erro ao conectar à API:", error));
+},
+});
+ 
+ 
+// STATUS MAQUINA
+AFRAME.registerComponent("progress", {
+    init: function () {
+        const statusNum = document.getElementById("statusNum");
+ 
+        fetch("https://www.random.org/integers/?num=1&min=0&max=100&col=1&base=10&format=plain&rnd=new")
+            .then((response) => response.text())
+            .then((data) => {
+                const progress = data.trim(); // Remove espaços em branco
+                const progressConcat = `${progress} %`; // Adiciona "%" ao valor
+                statusNum.setAttribute("value", progressConcat); // Define o valor com "%"
+            })
+            .catch((error) => alert("Erro ao conectar à API:", error));
+    },
+});
+ 
+ 
+ 
+// TC
+AFRAME.registerComponent("cycletime", {
+init: function () {
+const tcElement = document.getElementById("cycletime");
+ 
+fetch("https://www.random.org/integers/?num=1&min=1&max=100&col=1&base=10&format=plain&rnd=new")
+    .then((response) => response.text())
+    .then((data) => {
+        const tcValue = data.trim(); // Remove espaços em branco
+        tcElement.setAttribute("value", tcValue); // Define o valor diretamente
+    })
+    .catch((error) => alert("Erro ao conectar à API:", error));
+},
+});
+ 
+// OP
+AFRAME.registerComponent("operationcode", {
+init: function () {
+const opElement = document.getElementById("operationcode");
+ 
+fetch(`https://intelmount.apps.intelbras.com.br/v1/resources/mount?mac=${qrCodeResponse}`)
+    .then((response) => response.text())
+    .then((data) => {
+        const opValue = data.trim(); // Remove espaços em branco
+        opElement.setAttribute("value", opValue); // Define o valor diretamente
+    })
+    .catch((error) => alert("Erro ao conectar à API:", error));
+},
+});
+ 
+// Quantidade de Números
+AFRAME.registerComponent("quantidade", {
+init: function () {
+const quantidadeElement = document.getElementById("qtdNum");
+ 
+fetch("https://www.random.org/integers/?num=1&min=0&max=10000&col=1&base=10&format=plain&rnd=new")
+    .then((response) => response.text())
+    .then((data) => {
+        const quantidadeValue = data.trim(); // Remove espaços em branco
+        quantidadeElement.setAttribute("value", quantidadeValue); // Define o valor diretamente
+    })
+    .catch((error) => alert("Erro ao conectar à API:", error));
+},
+});
+ 
+// Quantidade de Produtos
+AFRAME.registerComponent("qtdprod", {
+init: function () {
+const quantidadeProdElement = document.getElementById("qtdProdNum");
+ 
+fetch("https://www.random.org/integers/?num=1&min=0&max=1000&col=1&base=10&format=plain&rnd=new")
+    .then((response) => response.text())
+    .then((data) => {
+        const quantidadeProdValue = data.trim(); // Remove espaços em branco
+        quantidadeProdElement.setAttribute("value", quantidadeProdValue); // Define o valor diretamente
+    })
+    .catch((error) => alert("Erro ao conectar à API:", error));
+},
+});
+ 
+// Refugo
+AFRAME.registerComponent("refugo", {
+init: function () {
+const refugoElement = document.getElementById("refugoNum");
+ 
+fetch("https://www.random.org/integers/?num=1&min=0&max=1000&col=1&base=10&format=plain&rnd=new")
+    .then((response) => response.text())
+    .then((data) => {
+        const refugoValue = data.trim(); // Remove espaços em branco
+        refugoElement.setAttribute("value", refugoValue); // Define o valor diretamente
+    })
+    .catch((error) => alert("Erro ao conectar à API:", error));
+},
+});
+ 
+// Quantidade Boa
+AFRAME.registerComponent("qtdboa", {
+init: function () {
+const quantidadeBoaElement = document.getElementById("qtdBoaNum");
+ 
+fetch("https://www.random.org/integers/?num=1&min=0&max=1000&col=1&base=10&format=plain&rnd=new")
+    .then((response) => response.text())
+    .then((data) => {
+        const quantidadeBoaValue = data.trim(); // Remove espaços em branco
+        quantidadeBoaElement.setAttribute("value", quantidadeBoaValue); // Define o valor diretamente
+    })
+    .catch((error) => alert("Erro ao conectar à API:", error));
+},
+});
+ 
+// Perf
+AFRAME.registerComponent("perf", {
+init: function () {
+const perfElement = document.getElementById("perf");
+ 
+fetch("https://www.random.org/integers/?num=1&min=0&max=100&col=1&base=10&format=plain&rnd=new")
+    .then((response) => response.text())
+    .then((data) => {
+        const perfValue = parseFloat(data.trim()); // Converte para número
+        const formPerfValue = perfValue.toFixed(2); // Formata para duas casas decimais
+        const perfConcat = `Perf ${formPerfValue}%`; // Adiciona "Perf" e "%"
+        perfElement.setAttribute("value", perfConcat); // Define o valor formatado
+    })
+    .catch((error) => alert("Erro ao conectar à API:", error));
+},
+});
+ 
+ 
+ 
+AFRAME.registerComponent("proxop", {
+    init: function () {
+        const proxOp = document.getElementById("proxOp");
+ 
+        fetch("https://www.random.org/integers/?num=1&min=0&max=999999&col=1&base=10&format=plain&rnd=new")
+            .then((response) => response.text())
+            .then((data) => {
+                const proxOpValue = data.trim();
+                const proxOpConcat = `Proxima OP: ${proxOpValue}`;
+                proxOp.setAttribute("value", proxOpConcat);
+            })
+            .catch((error) => alert("Erro ao conectar à API:", error));
+    },
+});
+ 
+    </script>
+ 
+    <style>
+        #a-scene {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+    </style>
+</head>
+ 
+<body>
+    <a-scene
+        id="a-scene"
+        embedded
+        arjs="sourceType: webcam; debugUIEnabled: false;"
+        camera="position: 0 1.6 0; fov: 80;" init-ar initializeGauges simulateProductionBarChange
+    >
+ 
+        <a-box
+            id="grandbox"
+            position="0 1.25 -3"
+            rotation="0 0 0"
+            color="#00a335"
+            scale="2 1 0.5"
+        >
+        </a-box>
+ 
+        <a-text
+            id="hours"
+            value=""
+            color="white"
+            width="1.3"
+            scale="1.2 0.7 1.2"
+            position="-0.7 1.65 -2.4"
+            align="center"
+            hours
+        >
+        </a-text>
+ 
+        <a-text
+            id="perf"
+            value="Perf 99.18%"
+            color="white"
+            width="1.3"
+            scale="1 0.5 1"
+            position="0.5 1.65 -2.4"
+            perf
+        >
+        </a-text>
+        <a-text
+            id=""
+            value="IS-87"
+            color="white"
+            width="1.3"
+            scale="1 0.5 1"
+            position="0.5 1.60 -2.4"
+        >
+        </a-text>
+ 
+        <a-text
+            value="INJ000"
+            color="white"
+            width="1.3"
+            scale="3 1.8 3"
+            position="0 1.57 -2.4"
+            align="center"
+        >
+        </a-text>
+ 
+        <a-text
+        id="statusMaq"
+        value="PRODUCAO"
+        color="white"
+        width="1.3"
+        scale="2.3 1 2.3"
+        position="0 1.43 -2"
+        align="center"
+        maq
+    >
+    </a-text>
+   
+        <!-- Barra de Produção -->
+        <a-entity position="0 1.43 -2.2">
+            <a-box
+                position="0 0 0"  
+                scale="0 0.1 0.1"  
+                color="darkgreen"
+                id="production-bar-fill"
+            ></a-box>
+        </a-entity>
+ 
+ 
+        <a-text
+            id="statusNum"
+            color="white"
+            width="1.3"
+            scale="1.5 0.9 1.5"
+            position="0 1.3 -2.4"
+            align="center"
+            progress
+        >
+        </a-text>  
+ 
+        <a-entity line="start: -0.8 1.25 -2.4; end: 0.8 1.25 -2.4; color: white"></a-entity>
+ 
+        <a-text
+            value="TC"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.75 1.2 -2.4"
+            align="center"
+        >
+        </a-text>
+        <a-text
+            id="cycletime"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.75 1.15 -2.4"
+            align="center"
+            cycletime
+        >
+        </a-text>  
+ 
+        <a-text
+            value="OP"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.5 1.2 -2.4"
+            align="center"
+        >
+        </a-text>
+        <a-text
+            id="operationcode"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.5 1.15 -2.4"
+            align="center"
+            operationcode
+        >
+        </a-text>  
+ 
+        <a-text
+            value="QTD"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.26 1.2 -2.4"
+            align="center"
+        >
+        </a-text>
+        <a-text
+            id="quantity"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.26 1.15 -2.4"
+            align="center"
+            quantity
+        >
+        </a-text>  
+ 
+        <a-text
+            value="QTD PROD"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="0.01 1.2 -2.4"
+            align="center"
+        >
+        </a-text>
+        <a-text
+            id="quantityprod"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="0.01 1.15 -2.4"
+            align="center"
+            quantityprod
+        >
+        </a-text>  
+ 
+        <a-text
+            value="REFUGO"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="0.35 1.2 -2.4"
+            align="center"
+        >
+        </a-text>
+        <a-text
+            id="scrapquantity"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="0.35 1.15 -2.4"
+            align="center"
+            scrapquantity
+        >
+        </a-text>
+ 
+        <a-text
+            value="QTD BOA"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="0.65 1.2 -2.4"
+            align="center"
+        >
+        </a-text>
+        <a-text
+            id="goodquantity"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="0.65 1.15 -2.4"
+            align="center"
+            goodquantity
+        >
+        </a-text>
+ 
+        <a-entity line="start: -0.8 1.1 -2.4; end: 0.8 1.1 -2.4; color: white"></a-entity>
+ 
+        <a-text
+            id="prodProduzindo"
+            value="0000000 - produzindo produto"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.8 1.05 -2.4"
+            align="left"
+        >
+        </a-text>
+ 
+        <a-text
+            id="nextop"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.8 0.93 -2.4"
+            align="left"
+            nextop
+        >
+        </a-text>
+ 
+    <!-- GAUGES -->
+     <!-- position vertical dos gauges mudada de 0.2 para 0.5 -->
+    <a-entity
+        id="gauges-group"
+    >
+        <a-entity
+            id="gauge-OEE"
+            position="-1.1 0.5 -2.4"  
+            scale="0.35 0.35 0.35"  
+        >
+            <a-ring
+                id="ring-OEE"
+                color="blue"
+                radius-inner="0.35"
+                radius-outer="0.45"  
+                theta-start="0"
+                theta-length="0"
+            ></a-ring>
+            <a-text
+                id="text-OEE"
+                value="OEE: 100%"
+                position="0 0.6 0"
+                align="center"
+                color="white"
+            ></a-text>
+        </a-entity>
+ 
+        <a-entity
+            id="gauge-Disponibilidade"
+            position="-0.4 0.5 -2.4"  
+            scale="0.35 0.35 0.35"  
+        >
+            <a-ring
+                id="ring-Disponibilidade"
+                color="orange"
+                radius-inner="0.35"
+                radius-outer="0.45"  
+                theta-start="0"
+                theta-length="0"
+            ></a-ring>
+            <a-text
+                id="text-Disponibilidade"
+                value="Disp: 100%"
+                position="0 0.6 0"
+                align="center"
+                color="white"
+            ></a-text>
+        </a-entity>
+ 
+        <a-entity
+            id="gauge-Performance"
+            position="0.4 0.5 -2.4"  
+            scale="0.35 0.35 0.35"  
+        >
+            <a-ring
+                id="ring-Performance"
+                color="green"
+                radius-inner="0.35"
+                radius-outer="0.45"  
+                theta-start="0"
+                theta-length="0"
+            ></a-ring>
+            <a-text
+                id="text-Performance"
+                value="Perf: 100%"
+                position="0 0.6 0"
+                align="center"
+                color="white"
+            ></a-text>
+        </a-entity>
+ 
+        <a-entity
+            id="gauge-Qualidade"
+            position="1.1 0.5 -2.4"  
+            scale="0.35 0.35 0.35"  
+        >
+            <a-ring
+                id="ring-Qualidade"
+                color="yellow"
+                radius-inner="0.35"
+                radius-outer="0.45"  
+                theta-start="0"
+                theta-length="0"
+            ></a-ring>
+            <a-text
+                id="text-Qualidade"
+                value="Qual: 100%"
+                position="0 0.6 0"
+                align="center"
+                color="white"
+            ></a-text>
+        </a-entity>
+    </a-entity>
+</a-scene>
+ 
+    <script>
+        navigator.mediaDevices
+            .getUserMedia({ video: true })
+            .then(initAR)
+            .catch((err) => alert("Permissão de câmera negada:", err));
+    </script>
+</body>
+</html>
