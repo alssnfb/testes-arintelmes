@@ -29,13 +29,12 @@
         arjs="sourceType: webcam; debugUIEnabled: false;"
         camera="position: 0 1.6 0; fov: 80; near: 0.1"   init-ar initGauges productionBar
     >
-    <a-marker type="pattern" url="markers\QrCodeTest2.patt" id="qr-marker">
-        <a-entity
-            id="marker-trigger"
-            visible="false"
-            position="0 0 0"
-            event-set__click="_event: click; _target: #qr-marker; visible: false;"
-        ></a-entity>
+    <a-marker type="pattern" url="markers\QrCode.patt" id="machine1-marker" data-mac="D0:EF:76:45:ED:DF">
+        <a-entity visible="false" position="0 0 0"></a-entity>
+    </a-marker>
+    
+    <a-marker type="pattern" url="markers\QrCodeTest2.patt" id="machine2-marker" data-mac="A1:B2:C3:D4:E5:F6">
+        <a-entity visible="false" position="0 0 0"></a-entity>
     </a-marker>
  
         <a-box

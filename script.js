@@ -68,18 +68,23 @@ function updateProductionBar(value) {
     }
 }
 
-async function fetchMachineData() {
-    const qrCodeResponse = 'D0:EF:76:45:ED:DF'; 
-    const components = ["cycletime", "operationcode", "quantity", "quantityprod", "scrapquantity", "goodquantity", "perf", "nextop", "rescode", "itemtool", "item"];
+// Function to handle marker detection and fetch data
+async function handleMarkerDetection(markerId) {
+    // Get the marker element
+    const markerElement = document.getElementById(markerId);
+    const macAddress = markerElement?.getAttribute('data-mac');
 
-    try {
-        if (qrCodeResponse) {
+    if (macAddress) {
+        console.log(`MAC Address detected from marker ${markerId}: ${macAddress}`);
+
+        // Proceed with fetching data from the API using the detected MAC address
+        try {
+            const qrCodeResponse = macAddress.trim();
             const intelmountAPIResponse = await fetch(`https://intelmount.apps.intelbras.com.br/v1/resources/mount?mac=${qrCodeResponse}`);
 
             if (intelmountAPIResponse.ok) {
                 const data = await intelmountAPIResponse.json();
-
-                console.log(data?.data?.[0].code, data?.data[0]?.orders?.currents[0]?.operationId);
+                console.log(data);
 
                 const machineDetails = {
                     cycletime: data?.data[0]?.orders?.currents[0]?.item?.factor,
@@ -90,11 +95,13 @@ async function fetchMachineData() {
                     goodquantity: data?.data[0]?.orders?.currents[0]?.production?.current - data?.data[0]?.orders?.currents[0]?.production?.refuge,
                     perf: data?.data[0]?.orders?.currents[0]?.perf,
                     nextop: "5607040-2",
-                    rescode: data?.data?.[0].code,
+                    rescode: data?.data[0]?.code,
                     itemtool: data?.data[0]?.orders?.currents[0]?.item?.tool,
                     item: `${data?.data[0]?.orders?.currents[0]?.item?.code} - ${data?.data[0]?.orders?.currents[0]?.item?.name}`
                 };
 
+                // Update HTML elements with data
+                const components = ["cycletime", "operationcode", "quantity", "quantityprod", "scrapquantity", "goodquantity", "perf", "rescode", "itemtool", "item"];
                 for (const component of components) {
                     const element = document.getElementById(component);
                     if (element) {
@@ -102,14 +109,19 @@ async function fetchMachineData() {
                     }
                 }
             } else {
-                console.log('Failed to fetch data from the API', intelmountAPIResponse.status);
+                console.log('Failed to fetch data from the API');
             }
+        } catch (error) {
+            console.log('Error connecting to the API:', error);
         }
-    } catch (error) {
-        console.error('Não foi possível se conectar à API', error);
+    } else {
+        console.log('No valid MAC address found for this marker');
     }
 }
 
+// Add event listeners for each registered marker
+const registeredMarkers = ['machine1-marker', 'machine2-marker']; // Add more as needed
 
-// fetchMachineData();
-
+registeredMarkers.forEach(markerId => {
+    document.getElementById(markerId).addEventListener('markerFound', () => handleMarkerDetection(markerId));
+});
