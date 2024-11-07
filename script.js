@@ -111,5 +111,5 @@ async function fetchMachineData() {
 }
 
 
-fetchMachineData();
+// fetchMachineData();
 

@@ -29,6 +29,14 @@
         arjs="sourceType: webcam; debugUIEnabled: false;"
         camera="position: 0 1.6 0; fov: 80; near: 0.1"   init-ar initGauges productionBar
     >
+    <a-marker type="pattern" url="markers\QrCodeTest2.patt" id="qr-marker">
+        <a-entity
+            id="marker-trigger"
+            visible="false"
+            position="0 0 0"
+            event-set__click="_event: click; _target: #qr-marker; visible: false;"
+        ></a-entity>
+    </a-marker>
  
         <a-box
             id="grandbox"
@@ -362,6 +370,20 @@
             ></a-text>
         </a-entity>
     </a-entity>
+    <script>
+        // Listen for the marker found event
+        document.querySelector('#qr-marker').addEventListener('markerFound', async function() {
+            console.log('QR marker detected');
+            await fetchMachineData(); // Trigger the data fetching function
+        });
+
+        // Hide the marker entity after fetching data
+        document.querySelector('#qr-marker').addEventListener('markerLost', function() {
+            console.log('Marker lost. Data should remain displayed.');
+            // Optionally disable marker detection or hide the marker visuals
+            this.setAttribute('visible', false);
+        });
+    </script>
 </a-scene>
  
     <script>
