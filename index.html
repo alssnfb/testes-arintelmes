@@ -1,14 +1,15 @@
+
+
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8" />
     <title>AR Intelmes</title>
     <link rel="icon" href="https://img.icons8.com/ios_filled/200/40C057/info.png">
-    <link rel="stylesheet" href="style.css">
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
     <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/jsqr/dist/jsQR.min.js"></script>
     <script src="script.js" defer></script>
+    
     <style>
         #a-scene {
             display: none;
@@ -20,36 +21,355 @@
         }
     </style>
 </head>
+ 
 <body>
-    <a-scene id="a-scene" embedded arjs="sourceType: webcam; debugUIEnabled: false;">
-        <a-box id="grandbox" position="0 1.25 -3" rotation="0 0 0" color="#00a335" scale="2 1 0.5"></a-box>
-        
-        <!-- Data Text Elements -->
-        <a-text id="hours" color="white" width="1.3" scale="1.2 0.7 1.2" position="-0.7 1.65 -2.4" align="center" hours></a-text>
-        <a-text id="perf" color="white" width="1.3" scale="1 0.5 1" position="0.5 1.65 -2.4" perf></a-text>
-        <a-text value="IS-87" color="white" width="1.3" scale="1 0.5 1" position="0.5 1.60 -2.4"></a-text>
-        <a-text value="INJ000" color="white" width="1.3" scale="3 1.8 3" position="0 1.57 -2.4" align="center"></a-text>
-        
-        <!-- Status Text and Production Bar -->
-        <a-text id="statusMaq" value="PRODUCAO" color="white" width="1.3" scale="2.3 1 2.3" position="0 1.43 -2" align="center"></a-text>
-        <a-entity position="0 1.43 -2.2">
-            <a-box position="0 0 0" scale="0 0.1 0.1" color="darkgreen" id="production-bar-fill"></a-box>
+    <a-scene
+        id="a-scene"
+        embedded
+        arjs="sourceType: webcam; debugUIEnabled: false;"
+        camera="position: 0 1.6 0; fov: 80; near: 0.1"   init-ar initGauges productionBar
+    >
+ 
+        <a-box
+            id="grandbox"
+            position="0 1.25 -3"
+            rotation="0 0 0"
+            color="#00a335"
+            scale="2 1 0.5"
+            frustumCulled="false"
+        >
+        </a-box>
+ 
+        <a-text
+            id="hours"
+            value="4 h"
+            color="white"
+            width="1.3"
+            scale="1.2 0.7 1.2"
+            position="-0.7 1.65 -2.4"
+            align="center"
+            frustumCulled="false"
+            random-hours
+        >
+        </a-text>
+ 
+        <a-text
+            id="perf"
+            color="white"
+            width="1.3"
+            scale="1 0.5 1"
+            position="0.5 1.65 -2.4"
+            frustumCulled="false"
+        >
+        </a-text>
+        <a-text
+            id="itemtool"
+            color="white"
+            width="1.3"
+            scale="1 0.5 1"
+            position="0.5 1.60 -2.4"
+            frustumCulled="false"
+        >
+        </a-text>
+ 
+        <a-text
+            id="rescode"
+            color="white"
+            width="1.3"
+            scale="3 1.8 3"
+            position="0 1.57 -2.4"
+            align="center"
+            frustumCulled="false"        
+        >
+        </a-text>
+ 
+        <a-text
+        id="status"
+        color="white"
+        width="1.3"
+        scale="2.3 1 2.3"
+        position="0 1.43 -2"
+        align="center"
+        frustumCulled="false"
+    >
+    </a-text>
+   
+        <!-- Barra de Produção -->
+        <a-entity position="0 1.43 -2.2" frustumCulled="false">
+            <a-box
+                position="0 0 0"  
+                scale="0 0.1 0.1"  
+                color="darkgreen"
+                id="production-bar-fill"
+            ></a-box>
         </a-entity>
-        
-        <!-- Machine Status and Operation Codes -->
-        <a-text id="statusNum" color="white" width="1.3" scale="1.5 0.9 1.5" position="0 1.3 -2.4" align="center" progress></a-text>
+ 
+        <a-text
+            id="statusNum"
+            value="33%"
+            color="white"
+            width="1.3"
+            scale="1.5 0.9 1.5"
+            position="0 1.3 -2.4"
+            align="center"
+            frustumCulled="false"
+            random-progress
+        >
+        </a-text>  
+ 
         <a-entity line="start: -0.8 1.25 -2.4; end: 0.8 1.25 -2.4; color: white"></a-entity>
-        <a-text value="TC" color="white" width="1.3" scale="1.2 0.8 1.2" position="-0.75 1.2 -2.4" align="center"></a-text>
-        <a-text id="cycletime" color="white" width="1.3" scale="1.2 0.8 1.2" position="-0.75 1.15 -2.4" align="center" cycletime></a-text>
-        
-        <!-- Additional Components for Gauges and Dynamic Data -->
-        <a-entity id="gauges-group" visible="false">
-            <!-- Define gauge entities and labels here as needed -->
+ 
+        <a-text
+            value="TC"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.75 1.2 -2.4"
+            align="center"
+            frustumCulled="false"
+        >
+        </a-text>
+        <a-text
+            id="cycletime"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.75 1.15 -2.4"
+            align="center"
+            frustumCulled="false"
+        >
+        </a-text>  
+ 
+        <a-text
+            value="OP"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.45 1.2 -2.4"
+            align="center"
+            frustumCulled="false"
+        >
+        </a-text>
+        <a-text
+            id="operationcode"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.45 1.15 -2.4"
+            align="center"
+            frustumCulled="false"
+        >
+        </a-text>  
+ 
+        <a-text
+            value="QTD"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.15 1.2 -2.4"
+            align="center"
+            frustumCulled="false"
+        >
+        </a-text>
+        <a-text
+            id="quantity"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.15 1.15 -2.4"
+            align="center"
+            frustumCulled="false"
+        >
+        </a-text>  
+ 
+        <a-text
+            value="QTD PROD"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="0.14 1.2 -2.4"
+            align="center"
+            frustumCulled="false"
+        >
+        </a-text>
+        <a-text
+            id="quantityprod"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="0.14 1.15 -2.4"
+            align="center"
+            frustumCulled="false"
+        >
+        </a-text>  
+ 
+        <a-text
+            value="REF"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="0.40 1.2 -2.4"
+            align="center"
+            frustumCulled="false"
+        >
+        </a-text>
+        <a-text
+            id="scrapquantity"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="0.40 1.15 -2.4"
+            align="center"
+            frustumCulled="false"
+        >
+        </a-text>
+ 
+        <a-text
+            value="QTD BOA"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="0.65 1.2 -2.4"
+            align="center"
+            frustumCulled="false"
+        >
+        </a-text>
+        <a-text
+            id="goodquantity"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="0.65 1.15 -2.4"
+            align="center"
+            frustumCulled="false"
+        >
+        </a-text>
+ 
+        <a-entity line="start: -0.8 1.1 -2.4; end: 0.8 1.1 -2.4; color: white" frustumCulled="false"></a-entity>
+ 
+        <a-text
+            id="item"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.8 1.05 -2.4"
+            align="left"
+            frustumCulled="false"
+        >
+        </a-text>
+ 
+        <a-text
+            id="nextop"
+            color="white"
+            width="1.3"
+            scale="1.2 0.8 1.2"
+            position="-0.8 0.93 -2.4"
+            align="left"
+            frustumCulled="false"
+        >
+        </a-text>
+ 
+    <!-- GAUGES -->
+     <!-- position vertical dos gauges mudada de 0.2 para 0.5 -->
+    <a-entity
+        id="gauges-group" frustumCulled="false"
+    >
+        <a-entity
+            id="gauge-OEE"
+            position="-1.1 0.5 -2.4"  
+            scale="0.35 0.35 0.35"
+        >
+            <a-ring
+                id="ring-OEE"
+                color="blue"
+                radius-inner="0.35"
+                radius-outer="0.45"  
+                theta-start="0"
+                theta-length="0"
+            ></a-ring>
+            <a-text
+                id="text-OEE"
+                value="OEE: 100%"
+                position="0 0.6 0"
+                align="center"
+                color="white"
+            ></a-text>
         </a-entity>
-        
-        <div class="button-container">
-            <button id="fetchDataButton" class="button" onclick="fetchMachineData()">Fetch Machine Data</button>
-        </div>
-    </a-scene>
+ 
+        <a-entity
+            id="gauge-Disponibilidade"
+            position="-0.4 0.5 -2.4"  
+            scale="0.35 0.35 0.35"  
+        >
+            <a-ring
+                id="ring-Disponibilidade"
+                color="orange"
+                radius-inner="0.35"
+                radius-outer="0.45"  
+                theta-start="0"
+                theta-length="0"
+            ></a-ring>
+            <a-text
+                id="text-Disponibilidade"
+                value="Disp: 100%"
+                position="0 0.6 0"
+                align="center"
+                color="white"
+            ></a-text>
+        </a-entity>
+ 
+        <a-entity
+            id="gauge-Performance"
+            position="0.4 0.5 -2.4"  
+            scale="0.35 0.35 0.35"  
+        >
+            <a-ring
+                id="ring-Performance"
+                color="green"
+                radius-inner="0.35"
+                radius-outer="0.45"  
+                theta-start="0"
+                theta-length="0"
+            ></a-ring>
+            <a-text
+                id="text-Performance"
+                value="Perf: 100%"
+                position="0 0.6 0"
+                align="center"
+                color="white"
+            ></a-text>
+        </a-entity>
+ 
+        <a-entity
+            id="gauge-Qualidade"
+            position="1.1 0.5 -2.4"  
+            scale="0.35 0.35 0.35"  
+        >
+            <a-ring
+                id="ring-Qualidade"
+                color="yellow"
+                radius-inner="0.35"
+                radius-outer="0.45"  
+                theta-start="0"
+                theta-length="0"
+            ></a-ring>
+            <a-text
+                id="text-Qualidade"
+                value="Qual: 100%"
+                position="0 0.6 0"
+                align="center"
+                color="white"
+            ></a-text>
+        </a-entity>
+    </a-entity>
+</a-scene>
+ 
+    <script>
+        navigator.mediaDevices
+            .getUserMedia({ video: true })
+            .then(initAR)
+            .catch((err) => alert("Permissão de câmera negada:", err));
+    </script>
 </body>
 </html>
+ 

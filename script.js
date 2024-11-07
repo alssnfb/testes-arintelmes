@@ -11,7 +11,6 @@ function initAR() {
     scene.style.display = "block";
 }
 
-// Function to initialize gauges with gradual updates
 function initializeGauges() {
     const gaugesGroup = document.getElementById("gauges-group");
     gaugesGroup.setAttribute("visible", "true");
@@ -24,7 +23,6 @@ function initializeGauges() {
     }, 10000);
 }
 
-// Simulates gradual changes in gauge values
 function simulateGaugeChange(textId, ringId, currentValue) {
     let newValue = getRandomValue(0, 100);
     let step = (newValue - currentValue) / 100;
@@ -40,7 +38,6 @@ function simulateGaugeChange(textId, ringId, currentValue) {
     }, 100);
 }
 
-// Updates the gauge display based on the current value
 function updateGauge(value, textId, ringId) {
     const textEntity = document.getElementById(textId);
     const ringEntity = document.getElementById(ringId);
@@ -52,7 +49,6 @@ function updateGauge(value, textId, ringId) {
     }
 }
 
-// Production bar simulation and updating function
 function simulateProductionBarChange() {
     let productionValue = 0;
     const step = 1;
@@ -72,9 +68,8 @@ function updateProductionBar(value) {
     }
 }
 
-// Function to fetch machine data from the API
 async function fetchMachineData() {
-    const qrCodeResponse = 'D0:EF:76:45:ED:DF'; // Example QR Code response
+    const qrCodeResponse = 'D0:EF:76:45:ED:DF'; 
     const components = ["cycletime", "operationcode", "quantity", "quantityprod", "scrapquantity", "goodquantity", "perf", "nextop", "rescode", "itemtool", "item"];
 
     try {
@@ -84,10 +79,8 @@ async function fetchMachineData() {
             if (intelmountAPIResponse.ok) {
                 const data = await intelmountAPIResponse.json();
 
-                // Log some useful information (can be removed if not needed)
                 console.log(data?.data?.[0].code, data?.data[0]?.orders?.currents[0]?.operationId);
 
-                // Extract machine details from the response
                 const machineDetails = {
                     cycletime: data?.data[0]?.orders?.currents[0]?.item?.factor,
                     operationcode: data?.data[0]?.orders?.currents[0]?.operationId,
@@ -96,13 +89,12 @@ async function fetchMachineData() {
                     scrapquantity: data?.data[0]?.orders?.currents[0]?.production?.refuge,
                     goodquantity: data?.data[0]?.orders?.currents[0]?.production?.current - data?.data[0]?.orders?.currents[0]?.production?.refuge,
                     perf: data?.data[0]?.orders?.currents[0]?.perf,
-                    nextop: "5607040-2", // This value seems static in your example
+                    nextop: "5607040-2",
                     rescode: data?.data?.[0].code,
                     itemtool: data?.data[0]?.orders?.currents[0]?.item?.tool,
                     item: `${data?.data[0]?.orders?.currents[0]?.item?.code} - ${data?.data[0]?.orders?.currents[0]?.item?.name}`
                 };
 
-                // Update the HTML elements with the fetched data
                 for (const component of components) {
                     const element = document.getElementById(component);
                     if (element) {
@@ -118,6 +110,6 @@ async function fetchMachineData() {
     }
 }
 
-// Example usage - call this function when appropriate, such as on QR code scan or button click
-// fetchMachineData();
+
+fetchMachineData();
 
