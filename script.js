@@ -68,8 +68,99 @@ function updateProductionBar(value) {
     }
 }
 
-// Function to handle marker detection and fetch data
+// Function to fetch machine data from the API
+async function fetchMachineData(macAddress) {
+    // Check if macAddress is defined and not empty
+    if (!macAddress) {
+        console.log("MAC Address is undefined or empty");
+        return null;
+    }
+
+    try {
+        const intelmountAPIResponse = await fetch(`https://intelmount.apps.intelbras.com.br/v1/resources/mount?mac=${macAddress.trim()}`);
+
+        if (intelmountAPIResponse.ok) {
+            const data = await intelmountAPIResponse.json();
+            console.log(data);
+
+            // Extract machine details
+            const machineDetails = {
+                cycletime: data?.data[0]?.orders?.currents[0]?.item?.factor,
+                operationcode: data?.data[0]?.orders?.currents[0]?.operationId,
+                quantity: data?.data[0]?.orders?.currents[0]?.production?.meta,
+                quantityprod: data?.data[0]?.orders?.currents[0]?.production?.current,
+                scrapquantity: data?.data[0]?.orders?.currents[0]?.production?.refuge,
+                goodquantity: data?.data[0]?.orders?.currents[0]?.production?.current - data?.data[0]?.orders?.currents[0]?.production?.refuge,
+                perf: data?.data[0]?.orders?.currents[0]?.perf,
+                nextop: "5607040-2",
+                rescode: data?.data[0]?.code,
+                itemtool: data?.data[0]?.orders?.currents[0]?.item?.tool,
+                item: `${data?.data[0]?.orders?.currents[0]?.item?.code} - ${data?.data[0]?.orders?.currents[0]?.item?.name}`
+            };
+
+            return machineDetails;
+        } else {
+            console.log('Failed to fetch data from the API');
+            return null;
+        }
+    } catch (error) {
+        console.log('Error connecting to the API:', error);
+        return null;
+    }
+}
+
+let activeMarker = null;  // Track the currently active marker to prevent multiple detections
+
+// Function to fetch machine data from the API
+async function fetchMachineData(macAddress) {
+    if (!macAddress) {
+        console.log("MAC Address is undefined or empty");
+        return null;
+    }
+
+    try {
+        const intelmountAPIResponse = await fetch(`https://intelmount.apps.intelbras.com.br/v1/resources/mount?mac=${macAddress.trim()}`);
+
+        if (intelmountAPIResponse.ok) {
+            const data = await intelmountAPIResponse.json();
+            console.log(data);
+
+            const machineDetails = {
+                cycletime: data?.data[0]?.orders?.currents[0]?.item?.factor,
+                operationcode: data?.data[0]?.orders?.currents[0]?.operationId,
+                quantity: data?.data[0]?.orders?.currents[0]?.production?.meta,
+                quantityprod: data?.data[0]?.orders?.currents[0]?.production?.current,
+                scrapquantity: data?.data[0]?.orders?.currents[0]?.production?.refuge,
+                goodquantity: data?.data[0]?.orders?.currents[0]?.production?.current - data?.data[0]?.orders?.currents[0]?.production?.refuge,
+                perf: data?.data[0]?.orders?.currents[0]?.perf,
+                nextop: "5607040-2",
+                rescode: data?.data[0]?.code,
+                itemtool: data?.data[0]?.orders?.currents[0]?.item?.tool,
+                item: `${data?.data[0]?.orders?.currents[0]?.item?.code} - ${data?.data[0]?.orders?.currents[0]?.item?.name}`
+            };
+
+            return machineDetails;
+        } else {
+            console.log('Failed to fetch data from the API');
+            return null;
+        }
+    } catch (error) {
+        console.log('Error connecting to the API:', error);
+        return null;
+    }
+}
+
+// Function to handle marker detection and update machine data
 async function handleMarkerDetection(markerId) {
+    // Only proceed if no other marker is being processed
+    if (activeMarker) {
+        console.log(`Another marker (${activeMarker}) is already being processed.`);
+        return;
+    }
+
+    // Mark this marker as the active one
+    activeMarker = markerId;
+
     // Get the marker element
     const markerElement = document.getElementById(markerId);
     const macAddress = markerElement?.getAttribute('data-mac');
@@ -77,45 +168,31 @@ async function handleMarkerDetection(markerId) {
     if (macAddress) {
         console.log(`MAC Address detected from marker ${markerId}: ${macAddress}`);
 
-        // Proceed with fetching data from the API using the detected MAC address
-        try {
-            const qrCodeResponse = macAddress.trim();
-            const intelmountAPIResponse = await fetch(`https://intelmount.apps.intelbras.com.br/v1/resources/mount?mac=${qrCodeResponse}`);
+        const machineDetails = await fetchMachineData(macAddress);
 
-            if (intelmountAPIResponse.ok) {
-                const data = await intelmountAPIResponse.json();
-                console.log(data);
-
-                const machineDetails = {
-                    cycletime: data?.data[0]?.orders?.currents[0]?.item?.factor,
-                    operationcode: data?.data[0]?.orders?.currents[0]?.operationId,
-                    quantity: data?.data[0]?.orders?.currents[0]?.production?.meta,
-                    quantityprod: data?.data[0]?.orders?.currents[0]?.production?.current,
-                    scrapquantity: data?.data[0]?.orders?.currents[0]?.production?.refuge,
-                    goodquantity: data?.data[0]?.orders?.currents[0]?.production?.current - data?.data[0]?.orders?.currents[0]?.production?.refuge,
-                    perf: data?.data[0]?.orders?.currents[0]?.perf,
-                    nextop: "5607040-2",
-                    rescode: data?.data[0]?.code,
-                    itemtool: data?.data[0]?.orders?.currents[0]?.item?.tool,
-                    item: `${data?.data[0]?.orders?.currents[0]?.item?.code} - ${data?.data[0]?.orders?.currents[0]?.item?.name}`
-                };
-
-                // Update HTML elements with data
-                const components = ["cycletime", "operationcode", "quantity", "quantityprod", "scrapquantity", "goodquantity", "perf", "rescode", "itemtool", "item"];
-                for (const component of components) {
-                    const element = document.getElementById(component);
-                    if (element) {
-                        element.setAttribute("value", machineDetails[component]);
-                    }
+        if (machineDetails) {
+            const components = ["cycletime", "operationcode", "quantity", "quantityprod", "scrapquantity", "goodquantity", "perf", "rescode", "itemtool", "item"];
+            for (const component of components) {
+                const element = document.getElementById(component);
+                if (element) {
+                    element.setAttribute("value", machineDetails[component]);
                 }
-            } else {
-                console.log('Failed to fetch data from the API');
             }
-        } catch (error) {
-            console.log('Error connecting to the API:', error);
         }
     } else {
         console.log('No valid MAC address found for this marker');
+    }
+
+    // Reset the active marker after the detection process is finished
+    activeMarker = null;
+}
+
+// Function to handle marker loss
+function handleMarkerLoss(markerId) {
+    console.log(`Marker ${markerId} lost. Stopping data fetch.`);
+    // Reset the active marker if it was previously active
+    if (activeMarker === markerId) {
+        activeMarker = null;
     }
 }
 
@@ -123,5 +200,9 @@ async function handleMarkerDetection(markerId) {
 const registeredMarkers = ['machine1-marker', 'machine2-marker']; // Add more as needed
 
 registeredMarkers.forEach(markerId => {
-    document.getElementById(markerId).addEventListener('markerFound', () => handleMarkerDetection(markerId));
+    const markerElement = document.getElementById(markerId);
+    if (markerElement) {
+        markerElement.addEventListener('markerFound', () => handleMarkerDetection(markerId));
+        markerElement.addEventListener('markerLost', () => handleMarkerLoss(markerId));
+    }
 });

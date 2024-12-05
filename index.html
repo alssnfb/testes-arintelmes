@@ -7,7 +7,7 @@
     <title>AR Intelmes</title>
     <link rel="icon" href="https://img.icons8.com/ios_filled/200/40C057/info.png">
     <script src="https://aframe.io/releases/1.3.0/aframe.min.js"></script>
-    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar.js"></script>
+    <script src="https://raw.githack.com/AR-js-org/AR.js/master/aframe/build/aframe-ar-nft.js"></script>
     <script src="script.js" defer></script>
     
     <style>
@@ -26,16 +26,16 @@
     <a-scene
         id="a-scene"
         embedded
-        arjs="sourceType: webcam; debugUIEnabled: false;"
-        camera="position: 0 1.6 0; fov: 80; near: 0.1"   init-ar initGauges productionBar
+        arjs="sourceType: webcam; sourceWidth:1280; sourceHeight:960; displayWidth: 1280; displayHeight: 960; detectionMode: mono_and_matrix; matrixCodeType: 3x3; "
+        init-ar initGauges productionBar
     >
-    <a-marker type="pattern" url="markers\QrCode.patt" id="machine1-marker" data-mac="D0:EF:76:45:ED:DF">
+    <a-nft type="nft" url="https://cors-anywhere.herokuapp.com/https://raw.githubusercontent.com/alssnfb/nftmarkertest/main/nft_markers/machine_1/" smooth="true" smoothCount="10" smoothTolerance=".01" smoothThreshold="5" id="machine1-marker" data-mac="D0:EF:76:45:ED:DF">
         <a-entity visible="false" position="0 0 0"></a-entity>
-    </a-marker>
+    </a-nft>
     
-    <a-marker type="pattern" url="markers\QrCodeTest2.patt" id="machine2-marker" data-mac="A1:B2:C3:D4:E5:F6">
+    <a-nft type="nft" url="https://cors-anywhere.herokuapp.com/https://raw.githubusercontent.com/alssnfb/nftmarkertest/main/nft_markers/machine_2/" smooth="true" smoothCount="10" smoothTolerance=".01" smoothThreshold="5" id="machine2-marker" data-mac="D0:EF:76:44:C4:EF">
         <a-entity visible="false" position="0 0 0"></a-entity>
-    </a-marker>
+    </a-nft>
  
         <a-box
             id="grandbox"
@@ -370,26 +370,44 @@
         </a-entity>
     </a-entity>
     <script>
-        // Listen for the marker found event
-        document.querySelector('#qr-marker').addEventListener('markerFound', async function() {
-            console.log('QR marker detected');
-            await fetchMachineData(); // Trigger the data fetching function
+        // Detect when NFT markers are found
+        document.querySelector('#machine1-marker').addEventListener('markerFound', async function () {
+            console.log('Machine 1 NFT marker detected!');
+            await fetchMachineData(); // Call your function to fetch data
         });
 
-        // Hide the marker entity after fetching data
-        document.querySelector('#qr-marker').addEventListener('markerLost', function() {
-            console.log('Marker lost. Data should remain displayed.');
-            // Optionally disable marker detection or hide the marker visuals
-            this.setAttribute('visible', false);
+        document.querySelector('#machine1-marker').addEventListener('markerLost', function () {
+            console.log('Machine 1 marker lost.');
+        });
+
+        document.querySelector('#machine2-marker').addEventListener('markerFound', async function () {
+            console.log('Machine 2 NFT marker detected!');
+            await fetchMachineData();
+        });
+
+        document.querySelector('#machine2-marker').addEventListener('markerLost', function () {
+            console.log('Machine 2 marker lost.');
         });
     </script>
+    
 </a-scene>
  
     <script>
-        navigator.mediaDevices
-            .getUserMedia({ video: true })
-            .then(initAR)
-            .catch((err) => alert("Permissão de câmera negada:", err));
+    navigator.mediaDevices
+            .getUserMedia({
+                video: {
+                    width: { ideal: 1280 }, // Ideal width
+                    height: { ideal: 960 }, // Ideal height
+                    facingMode: "environment", // Use rear camera if available
+                },
+            })
+            .then((stream) => {
+                const video = document.createElement("video");
+                video.srcObject = stream;
+                video.play();
+                initAR();
+            })
+            .catch((err) => alert("Camera permission denied:", err));
     </script>
 </body>
 </html>
