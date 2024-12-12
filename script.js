@@ -49,69 +49,20 @@ function updateGauge(value, textId, ringId) {
     }
 }
 
-function simulateProductionBarChange() {
-    let productionValue = 0;
-    const step = 1;
+// function simulateProductionBarChange() {
+//     let productionValue = 0;
+//     const step = 1;
 
-    const interval = setInterval(() => {
-        productionValue = (productionValue >= 100) ? 0 : productionValue + step;
-        updateProductionBar(productionValue);
-    }, 100);
-}
+//     const interval = setInterval(() => {
+//         productionValue = (productionValue >= 100) ? 0 : productionValue + step;
+//         updateProductionBar(productionValue);
+//     }, 100);
+// }
 
-function updateProductionBar(value) {
-    const barFill = document.getElementById("production-bar-fill");
-    if (barFill) {
-        const fillScale = value / 100;
-        barFill.setAttribute("scale", `${fillScale * 1.3} 0.1 0.1`);
-        barFill.setAttribute("position", `${(fillScale * 1.3 / 2) - 0.65} 0 0`);
-    }
-}
+// Track the currently active marker to prevent multiple detections
+let activeMarker = null;
 
-// Function to fetch machine data from the API
-async function fetchMachineData(macAddress) {
-    // Check if macAddress is defined and not empty
-    if (!macAddress) {
-        console.log("MAC Address is undefined or empty");
-        return null;
-    }
-
-    try {
-        const intelmountAPIResponse = await fetch(`https://intelmount.apps.intelbras.com.br/v1/resources/mount?mac=${macAddress.trim()}`);
-
-        if (intelmountAPIResponse.ok) {
-            const data = await intelmountAPIResponse.json();
-            console.log(data);
-
-            // Extract machine details
-            const machineDetails = {
-                cycletime: data?.data[0]?.orders?.currents[0]?.item?.factor,
-                operationcode: data?.data[0]?.orders?.currents[0]?.operationId,
-                quantity: data?.data[0]?.orders?.currents[0]?.production?.meta,
-                quantityprod: data?.data[0]?.orders?.currents[0]?.production?.current,
-                scrapquantity: data?.data[0]?.orders?.currents[0]?.production?.refuge,
-                goodquantity: data?.data[0]?.orders?.currents[0]?.production?.current - data?.data[0]?.orders?.currents[0]?.production?.refuge,
-                perf: data?.data[0]?.orders?.currents[0]?.perf,
-                nextop: "5607040-2",
-                rescode: data?.data[0]?.code,
-                itemtool: data?.data[0]?.orders?.currents[0]?.item?.tool,
-                item: `${data?.data[0]?.orders?.currents[0]?.item?.code} - ${data?.data[0]?.orders?.currents[0]?.item?.name}`
-            };
-
-            return machineDetails;
-        } else {
-            console.log('Failed to fetch data from the API');
-            return null;
-        }
-    } catch (error) {
-        console.log('Error connecting to the API:', error);
-        return null;
-    }
-}
-
-let activeMarker = null;  // Track the currently active marker to prevent multiple detections
-
-// Function to fetch machine data from the API
+// Fetch machine data from the API
 async function fetchMachineData(macAddress) {
     if (!macAddress) {
         console.log("MAC Address is undefined or empty");
@@ -125,7 +76,7 @@ async function fetchMachineData(macAddress) {
             const data = await intelmountAPIResponse.json();
             console.log(data);
 
-            const machineDetails = {
+            return {
                 cycletime: data?.data[0]?.orders?.currents[0]?.item?.factor,
                 operationcode: data?.data[0]?.orders?.currents[0]?.operationId,
                 quantity: data?.data[0]?.orders?.currents[0]?.production?.meta,
@@ -138,8 +89,6 @@ async function fetchMachineData(macAddress) {
                 itemtool: data?.data[0]?.orders?.currents[0]?.item?.tool,
                 item: `${data?.data[0]?.orders?.currents[0]?.item?.code} - ${data?.data[0]?.orders?.currents[0]?.item?.name}`
             };
-
-            return machineDetails;
         } else {
             console.log('Failed to fetch data from the API');
             return null;
@@ -150,27 +99,23 @@ async function fetchMachineData(macAddress) {
     }
 }
 
-// Function to handle marker detection and update machine data
 async function handleMarkerDetection(markerId) {
-    // Only proceed if no other marker is being processed
     if (activeMarker) {
         console.log(`Another marker (${activeMarker}) is already being processed.`);
         return;
     }
 
-    // Mark this marker as the active one
     activeMarker = markerId;
 
-    // Get the marker element
     const markerElement = document.getElementById(markerId);
     const macAddress = markerElement?.getAttribute('data-mac');
 
     if (macAddress) {
         console.log(`MAC Address detected from marker ${markerId}: ${macAddress}`);
-
         const machineDetails = await fetchMachineData(macAddress);
 
         if (machineDetails) {
+            // Update machine data components
             const components = ["cycletime", "operationcode", "quantity", "quantityprod", "scrapquantity", "goodquantity", "perf", "rescode", "itemtool", "item"];
             for (const component of components) {
                 const element = document.getElementById(component);
@@ -178,27 +123,94 @@ async function handleMarkerDetection(markerId) {
                     element.setAttribute("value", machineDetails[component]);
                 }
             }
+
+            // Update production bar dynamically
+            updateProductionBarUI(machineDetails);
         }
     } else {
         console.log('No valid MAC address found for this marker');
     }
 
-    // Reset the active marker after the detection process is finished
-    activeMarker = null;
+    activeMarker = null; // Reset active marker
 }
 
-// Function to handle marker loss
+// Handle marker loss and reset UI
 function handleMarkerLoss(markerId) {
     console.log(`Marker ${markerId} lost. Stopping data fetch.`);
-    // Reset the active marker if it was previously active
     if (activeMarker === markerId) {
         activeMarker = null;
+        resetProductionBarUI();
     }
 }
 
-// Add event listeners for each registered marker
-const registeredMarkers = ['machine1-marker', 'machine2-marker']; // Add more as needed
+// Calculate production percentage
+function calcProductionPercentage(machineDetails) {
+    const { quantity, quantityprod, scrapquantity } = machineDetails;
 
+    if (!quantityprod || !quantity) return 0; // Avoid division by zero
+
+    const produced = quantityprod - (scrapquantity || 0);
+    return Math.max(0, Math.min(100, ((produced / quantity) * 100).toFixed(2)));
+}
+
+// Update all machine data in the UI
+function updateMachineDataUI(machineDetails) {
+    const components = ["cycletime", "operationcode", "quantity", "quantityprod", "scrapquantity", "goodquantity", "perf", "rescode", "itemtool", "item"];
+    components.forEach(component => {
+        const element = document.getElementById(component);
+        if (element) {
+            element.setAttribute("value", machineDetails[component] || "N/A");
+        }
+    });
+}
+
+function updateProductionBarUI(machineDetails) {
+    const percentage = calcProductionPercentage(machineDetails); // Calculate production percentage
+    const barElement = document.getElementById("production-bar-fill");
+    const percentageElement = document.getElementById("statusNum"); // Get the percentage display element
+
+    if (barElement) {
+        // Scale adjusts the length of the bar
+        const fillScale = percentage / 100; // Scale length proportionally to percentage
+        const maxBarLength = 2; // Maximum length of the bar
+        const barLength = fillScale * maxBarLength; // Calculate actual bar length
+
+        // Adjust the bar's start point (move to the right)
+        const startOffset = 0.3; // Move start point to the right (increase this value for larger shifts)
+        const newPositionX = (barLength / 2) - 1 + startOffset; // Adjust position to shift the origin
+
+        // Adjust the bar's end point (move inward from the left)
+        const endOffset = -0.3; // Reduce bar length from the left (negative value shrinks the end point)
+        const adjustedBarLength = barLength + endOffset; // Adjusted bar length
+
+        // Apply scale and position updates to the bar
+        barElement.setAttribute("scale", `${adjustedBarLength} 0.1 0.1`);
+        barElement.setAttribute("position", `${newPositionX} 0 0`);
+    }
+
+    if (percentageElement) {
+        // Update the displayed percentage value
+        percentageElement.setAttribute("value", `${percentage}%`);
+        
+        // Position the percentage element above the bar
+        const percentageXOffset = startOffset; // Align with the start of the bar
+        const percentageYPosition = 0.15; // Slightly above the bar
+        percentageElement.setAttribute("position", `${percentageXOffset} ${percentageYPosition} 0`);
+    }
+}
+
+
+// Reset the production bar UI to initial state
+function resetProductionBarUI() {
+    const barElement = document.getElementById("production-bar-fill");
+    const percentageElement = document.getElementById("statusPercentage");
+
+    if (barElement) barElement.setAttribute("scale", "0 0.1 0.1");
+    if (percentageElement) percentageElement.setAttribute("value", "0%");
+}
+
+// Add event listeners for each registered marker
+const registeredMarkers = ['machine1-marker', 'machine2-marker'];
 registeredMarkers.forEach(markerId => {
     const markerElement = document.getElementById(markerId);
     if (markerElement) {
