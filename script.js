@@ -176,11 +176,11 @@ function updateProductionBarUI(machineDetails) {
         const barLength = fillScale * maxBarLength; // Calculate actual bar length
 
         // Adjust the bar's start point (move to the right)
-        const startOffset = 0.3; // Move start point to the right (increase this value for larger shifts)
+        const startOffset = 0.2; // Move start point to the right (increase this value for larger shifts)
         const newPositionX = (barLength / 2) - 1 + startOffset; // Adjust position to shift the origin
 
         // Adjust the bar's end point (move inward from the left)
-        const endOffset = -0.3; // Reduce bar length from the left (negative value shrinks the end point)
+        const endOffset = -0.2; // Reduce bar length from the left (negative value shrinks the end point)
         const adjustedBarLength = barLength + endOffset; // Adjusted bar length
 
         // Apply scale and position updates to the bar
