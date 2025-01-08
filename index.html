@@ -36,7 +36,15 @@
     <a-nft type="nft" url="https://cors-anywhere.herokuapp.com/https://raw.githubusercontent.com/alssnfb/nftmarkertest/main/nft_markers/machine_2/" smooth="true" smoothCount="10" smoothTolerance=".01" smoothThreshold="5" id="machine2-marker" data-mac="D0:EF:76:44:C4:EF">
         <a-entity visible="false" position="0 0 0"></a-entity>
     </a-nft>
- 
+    
+    <a-nft type="nft" url="https://cors-anywhere.herokuapp.com/https://raw.githubusercontent.com/alssnfb/nftmarkertest/main/nft_markers/machine_3/" smooth="true" smoothCount="10" smoothTolerance=".01" smoothThreshold="5" id="machine3-marker" data-mac="D0:EF:76:45:38:2B">
+        <a-entity visible="false" position="0 0 0"></a-entity>
+    </a-nft>
+    
+    <a-nft type="nft" url="https://cors-anywhere.herokuapp.com/https://raw.githubusercontent.com/alssnfb/nftmarkertest/main/nft_markers/machine_4/" smooth="true" smoothCount="10" smoothTolerance=".01" smoothThreshold="5" id="machine4-marker" data-mac="D0:EF:76:45:E8:FB">
+    <a-entity visible="false" position="0 0 0"></a-entity>
+    </a-nft>
+
         <a-box
             id="grandbox"
             position="0 1.25 -3"
@@ -278,95 +286,22 @@
  
     <!-- GAUGES -->
      <!-- position vertical dos gauges mudada de 0.2 para 0.5 -->
-    <a-entity
-        id="gauges-group" frustumCulled="false"
-    >
-        <a-entity
-            id="gauge-OEE"
-            position="-1.1 0.5 -2.4"  
-            scale="0.35 0.35 0.35"
-        >
-            <a-ring
-                id="ring-OEE"
-                color="blue"
-                radius-inner="0.35"
-                radius-outer="0.45"  
-                theta-start="0"
-                theta-length="0"
-            ></a-ring>
-            <a-text
-                id="text-OEE"
-                value="OEE: 100%"
-                position="0 0.6 0"
-                align="center"
-                color="white"
-            ></a-text>
+     <a-entity id="gauges-group" visible="false" frustumCulled="false">
+        <a-entity id="gauge-OEE" position="-1 0.5 -2.4" scale="0.35 0.35 0.35">
+            <a-ring id="ring-OEE" color="blue" radius-inner="0.35" radius-outer="0.45" theta-start="0" theta-length="0"></a-ring>
+            <a-text id="text-OEE" value="OEE: 0%" position="0 0.6 0" align="center" color="white"></a-text>
         </a-entity>
- 
-        <a-entity
-            id="gauge-Disponibilidade"
-            position="-0.4 0.5 -2.4"  
-            scale="0.35 0.35 0.35"  
-        >
-            <a-ring
-                id="ring-Disponibilidade"
-                color="orange"
-                radius-inner="0.35"
-                radius-outer="0.45"  
-                theta-start="0"
-                theta-length="0"
-            ></a-ring>
-            <a-text
-                id="text-Disponibilidade"
-                value="Disp: 100%"
-                position="0 0.6 0"
-                align="center"
-                color="white"
-            ></a-text>
+        <a-entity id="gauge-Disponibilidade" position="0 0.5 -2.4" scale="0.35 0.35 0.35">
+            <a-ring id="ring-Disponibilidade" color="green" radius-inner="0.35" radius-outer="0.45" theta-start="0" theta-length="0"></a-ring>
+            <a-text id="text-Disponibilidade" value="Disponibilidade: 0%" position="0 0.6 0" align="center" color="white"></a-text>
         </a-entity>
- 
-        <a-entity
-            id="gauge-Performance"
-            position="0.4 0.5 -2.4"  
-            scale="0.35 0.35 0.35"  
-        >
-            <a-ring
-                id="ring-Performance"
-                color="green"
-                radius-inner="0.35"
-                radius-outer="0.45"  
-                theta-start="0"
-                theta-length="0"
-            ></a-ring>
-            <a-text
-                id="text-Performance"
-                value="Perf: 100%"
-                position="0 0.6 0"
-                align="center"
-                color="white"
-            ></a-text>
+        <a-entity id="gauge-Performance" position="1 0.5 -2.4" scale="0.35 0.35 0.35">
+            <a-ring id="ring-Performance" color="red" radius-inner="0.35" radius-outer="0.45" theta-start="0" theta-length="0"></a-ring>
+            <a-text id="text-Performance" value="Performance: 0%" position="0 0.6 0" align="center" color="white"></a-text>
         </a-entity>
- 
-        <a-entity
-            id="gauge-Qualidade"
-            position="1.1 0.5 -2.4"  
-            scale="0.35 0.35 0.35"  
-        >
-            <a-ring
-                id="ring-Qualidade"
-                color="yellow"
-                radius-inner="0.35"
-                radius-outer="0.45"  
-                theta-start="0"
-                theta-length="0"
-            ></a-ring>
-            <a-text
-                id="text-Qualidade"
-                value="Qual: 100%"
-                position="0 0.6 0"
-                align="center"
-                color="white"
-            ></a-text>
+        <a-entity id="gauge-Qualidade" position="2 0.5 -2.4" scale="0.35 0.35 0.35">
+            <a-ring id="ring-Qualidade" color="yellow" radius-inner="0.35" radius-outer="0.45" theta-start="0" theta-length="0"></a-ring>
+            <a-text id="text-Qualidade" value="Qualidade: 0%" position="0 0.6 0" align="center" color="white"></a-text>
         </a-entity>
     </a-entity>
     <script>

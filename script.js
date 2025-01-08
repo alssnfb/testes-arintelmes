@@ -11,31 +11,29 @@ function initAR() {
     scene.style.display = "block";
 }
 
-function initializeGauges() {
-    const gaugesGroup = document.getElementById("gauges-group");
-    gaugesGroup.setAttribute("visible", "true");
+async function processDataAndInitializeGauges(macAddress) {
+    // Wait for fetchMachineData to complete
+    const machineData = await fetchMachineData(macAddress);
 
-    setInterval(() => {
-        simulateGaugeChange('text-OEE', 'ring-OEE', getRandomValue(0, 100));
-        simulateGaugeChange('text-Disponibilidade', 'ring-Disponibilidade', getRandomValue(0, 100));
-        simulateGaugeChange('text-Performance', 'ring-Performance', getRandomValue(0, 100));
-        simulateGaugeChange('text-Qualidade', 'ring-Qualidade', getRandomValue(0, 100));
-    }, 10000);
+    if (machineData) {
+        console.log("Machine data fetched successfully. Initializing gauges...");
+        
+        // Initialize gauges only if data exists
+        initializeGauges(machineData);
+    } else {
+        console.log("No data fetched. Gauges will not be initialized.");
+    }
 }
 
-function simulateGaugeChange(textId, ringId, currentValue) {
-    let newValue = getRandomValue(0, 100);
-    let step = (newValue - currentValue) / 100;
+function initializeGauges(data) {
+    const gaugesGroup = document.getElementById("gauges-group");
+    gaugesGroup.setAttribute("visible", "true"); // Make gauges visible
 
-    const interval = setInterval(() => {
-        if (Math.abs(newValue - currentValue) < Math.abs(step)) {
-            currentValue = newValue;
-            clearInterval(interval);
-        } else {
-            currentValue += step;
-        }
-        updateGauge(currentValue, textId, ringId);
-    }, 100);
+    // Use data from the API to set initial values
+    updateGauge(data.perf || 0, 'text-OEE', 'ring-OEE');
+    updateGauge(data.quantity || 0, 'text-Disponibilidade', 'ring-Disponibilidade');
+    updateGauge(data.scrapquantity || 0, 'text-Performance', 'ring-Performance');
+    updateGauge(data.goodquantity || 0, 'text-Qualidade', 'ring-Qualidade');
 }
 
 function updateGauge(value, textId, ringId) {
@@ -44,20 +42,10 @@ function updateGauge(value, textId, ringId) {
 
     if (textEntity && ringEntity) {
         textEntity.setAttribute('value', `${textId.split('-')[1]}: ${Math.round(value)}%`);
-        ringEntity.setAttribute('color', `rgb(${255 - value}, ${value}, 0)`);
+        ringEntity.setAttribute('color', `rgb(${255 - value}, ${value}, 0)`); // Red to green gradient
         ringEntity.setAttribute('theta-length', (value / 100) * 360);
     }
 }
-
-// function simulateProductionBarChange() {
-//     let productionValue = 0;
-//     const step = 1;
-
-//     const interval = setInterval(() => {
-//         productionValue = (productionValue >= 100) ? 0 : productionValue + step;
-//         updateProductionBar(productionValue);
-//     }, 100);
-// }
 
 // Track the currently active marker to prevent multiple detections
 let activeMarker = null;
@@ -210,7 +198,7 @@ function resetProductionBarUI() {
 }
 
 // Add event listeners for each registered marker
-const registeredMarkers = ['machine1-marker', 'machine2-marker'];
+const registeredMarkers = ['machine1-marker', 'machine2-marker','machine3-marker', 'machine4-marker'];
 registeredMarkers.forEach(markerId => {
     const markerElement = document.getElementById(markerId);
     if (markerElement) {
