@@ -49,6 +49,8 @@ function updateGauge(value, textId, ringId) {
 
 // Track the currently active marker to prevent multiple detections
 let activeMarker = null;
+// Stores the last detected machine details
+let lastDetectedMachineDetails = null; 
 
 // Fetch machine data from the API
 async function fetchMachineData(macAddress) {
@@ -61,10 +63,16 @@ async function fetchMachineData(macAddress) {
         const intelmountAPIResponse = await fetch(`https://intelmount.apps.intelbras.com.br/v1/resources/mount?mac=${macAddress.trim()}`);
 
         if (intelmountAPIResponse.ok) {
+            const components = [
+                "cycletime", "operationcode", "quantity", "quantityprod",
+                "scrapquantity", "goodquantity", "perf", "nextop", "rescode",
+                "itemtool", "item", "status"
+            ];
             const data = await intelmountAPIResponse.json();
+            const status = data?.data[0]?.status;
+            const stopDetails = data?.data?.[0]?.stopDetails?.[0]? { color: data.data[0].stopDetails[0].color, name: data.data[0].stopDetails[0].name }: null;
             console.log(data);
-
-            return {
+            const machineDetails = {
                 cycletime: data?.data[0]?.orders?.currents[0]?.item?.factor,
                 operationcode: data?.data[0]?.orders?.currents[0]?.operationId,
                 quantity: data?.data[0]?.orders?.currents[0]?.production?.meta,
@@ -77,6 +85,20 @@ async function fetchMachineData(macAddress) {
                 itemtool: data?.data[0]?.orders?.currents[0]?.item?.tool,
                 item: `${data?.data[0]?.orders?.currents[0]?.item?.code} - ${data?.data[0]?.orders?.currents[0]?.item?.name}`
             };
+
+            for (const component of components) {
+                const element = document.getElementById(component);
+                if (element) {
+                    element.setAttribute("value", machineDetails[component]);
+                }
+            }
+
+            // Update machine status
+            updateMachineStatus(status, stopDetails, machineDetails);
+
+            // Return the complete machineDetails object
+            return machineDetails;
+
         } else {
             console.log('Failed to fetch data from the API');
             return null;
@@ -103,13 +125,27 @@ async function handleMarkerDetection(markerId) {
         const machineDetails = await fetchMachineData(macAddress);
 
         if (machineDetails) {
+            // Save details to global variable
+            lastDetectedMachineDetails = machineDetails;
+
             // Update machine data components
-            const components = ["cycletime", "operationcode", "quantity", "quantityprod", "scrapquantity", "goodquantity", "perf", "rescode", "itemtool", "item"];
+            const components = [
+                "cycletime", "operationcode", "quantity", "quantityprod",
+                "scrapquantity", "goodquantity", "perf", "rescode", "itemtool", "item"
+            ];
             for (const component of components) {
                 const element = document.getElementById(component);
                 if (element) {
                     element.setAttribute("value", machineDetails[component]);
                 }
+            }
+
+            // Call initTime with the fetched resCode if available
+            if (machineDetails.rescode) {
+                console.log(`Initializing time for resCode: ${machineDetails.rescode}`);
+                await initTime(machineDetails.rescode);
+            } else {
+                console.error('No valid resCode found in machineDetails.');
             }
 
             // Update production bar dynamically
@@ -122,12 +158,27 @@ async function handleMarkerDetection(markerId) {
     activeMarker = null; // Reset active marker
 }
 
-// Handle marker loss and reset UI
 function handleMarkerLoss(markerId) {
-    console.log(`Marker ${markerId} lost. Stopping data fetch.`);
+    console.log(`Marker ${markerId} lost. Retaining last detected data.`);
     if (activeMarker === markerId) {
         activeMarker = null;
-        resetProductionBarUI();
+
+        if (lastDetectedMachineDetails) {
+            // Retain the displayed data
+            const components = [
+                "cycletime", "operationcode", "quantity", "quantityprod",
+                "scrapquantity", "goodquantity", "perf", "rescode", "itemtool", "item"
+            ];
+            for (const component of components) {
+                const element = document.getElementById(component);
+                if (element) {
+                    element.setAttribute("value", lastDetectedMachineDetails[component]);
+                }
+            }
+
+            // Retain the production bar state
+            updateProductionBarUI(lastDetectedMachineDetails);
+        }
     }
 }
 
@@ -206,3 +257,152 @@ registeredMarkers.forEach(markerId => {
         markerElement.addEventListener('markerLost', () => handleMarkerLoss(markerId));
     }
 });
+
+// TIME .............................................................................................................................................
+
+async function initTime(macAddress) {
+    console.log("Initializing time with MAC Address:", macAddress);
+
+    // Fetch machine data
+    const machineData = await fetchMachineData(macAddress);
+    console.log("Fetched machine data:", machineData);
+
+    if (!machineData || typeof machineData !== "object" || !machineData.rescode) {
+        console.error("Invalid machine data or missing rescode:", machineData);
+        console.log("Initialization aborted.");
+        return;
+    }
+
+    const resCode = machineData.rescode;
+    console.log("Initializing time with rescode:", resCode);
+
+    try {
+        // Fetch productive date
+        const productiveDateAps = await fetch(
+            `https://intelcalc.apps.intelbras.com.br/v1/resources/${resCode}/aps/calendar/productive?date=${new Date().toISOString()}`
+        );
+
+        if (productiveDateAps.ok) {
+            const data = await productiveDateAps.json();
+
+            console.log("Productive data fetched:", data);
+
+            const timeDetails = {
+                dateStart: data?.data?.dateStart,
+                dateEnd: data?.data?.dateEnd,
+            };
+
+            const startDate = new Date(timeDetails.dateStart);
+            const endDate = timeDetails.dateEnd ? new Date(timeDetails.dateEnd) : new Date();
+            const operationTime = (endDate - startDate) / 60000;
+
+            const hours = Math.floor(operationTime / 60);
+            const minutes = Math.floor(operationTime % 60);
+            const duration = hours > 0 ? `${hours} h` : `${minutes} min`;
+
+            console.log(`The machine operated for ${duration}.`);
+
+            const hoursElement = document.getElementById("hours");
+            if (hoursElement) {
+                hoursElement.setAttribute("value", duration);
+            } else {
+                console.error("Element with id 'hours' not found.");
+            }
+
+            return timeDetails;
+        } else {
+            console.error("Failed to fetch productive data:", productiveDateAps.status);
+        }
+    } catch (error) {
+        console.error("Error while processing productive data:", error);
+    }
+}
+
+
+// STATUS MACHINE ............................................................................................................................
+
+async function updateMachineStatus(status, stopDetails, machineDetails) {
+
+	// PRODUÇÃO
+	if (status === "PRODUCTION") {
+		console.log("Entrou em produção");
+
+		document.getElementById("grandbox").setAttribute("color", "#00a335");
+		document.getElementById("status").setAttribute("value", "PRODUCAO");
+
+		if (!machineDetails.orders) {
+			document.getElementById("item").setAttribute("value", "sem item");
+			const elementsToHide = [
+				"cycletime", "operationcode", "quantity", "quantityprod",
+				"scrapquantity", "perf", "goodquantity", "calcProdNum", 
+				"tc", "op", "qtd", "qtdboa", "qtdprod", "ref", "itemtool", "nextop", "statusPercentage"
+			];
+			for (const id of elementsToHide) {
+				const element = document.getElementById(id);
+				if (element) element.setAttribute("visible", "false");
+			}
+		}
+		updateMachineDataUI(machineDetails);
+	}
+
+	// PARADO
+	if (status === "STOP" ) {
+		console.log("Entrou em parada");
+
+		document.getElementById("grandbox").setAttribute("color", `#${stopDetails.color || '00a335'}`);        
+		document.getElementById("status").setAttribute("value", "PARADO");
+		document.getElementById("item").setAttribute("value", stopDetails.name);
+
+		if (!machineDetails.orders) {
+			// Parado sem ordem
+			console.log("Entrou em parado sem ordem");
+
+			document.getElementById("grandbox").setAttribute("color", `#${stopDetails.color || '00a335'}`);
+			document.getElementById("status").setAttribute("value", "PARADO");
+			document.getElementById("tc").setAttribute("value", stopDetails.name);
+
+			const elementsToHide = [ "cycletime", "operationcode", "quantity", "quantityprod", "scrapquantity", "perf", "goodquantity", "calcProdNum", "tc", "op", "qtd", "qtdboa", "qtdprod", "ref", "itemtool", "nextop", "statusPercentage", "lineI", "lineII"  ];
+			for (const id of elementsToHide) {
+				const element = document.getElementById(id);
+				if (element) element.setAttribute("visible", "false");
+			}
+		}
+		if (stopDetails.color === "CBDEE8") {
+			document.getElementById("grandbox").setAttribute("color", "#4f5a61")
+		}
+		if (stopDetails.color === "FFCC47") {
+			document.getElementById("grandbox").setAttribute("color", "#f5c207")
+		}
+		updateMachineDataUI(machineDetails);
+	} 
+
+	// INATIVO
+	if (status === "INACTIVE") {
+		console.log("Entrou em inativo");
+
+		const elementsToHide = [  "cycletime", "operationcode", "quantity", "quantityprod", "scrapquantity", "perf", "goodquantity", "calcProdNum", "tc", "op", "qtd", "qtdboa", "qtdprod", "ref"  ];
+		document.getElementById("grandbox").setAttribute("color", "#4f5a61");
+		document.getElementById("status").setAttribute("value", "INATIVO");
+		document.getElementById("item").setAttribute("value", "FORA DE TURNO: MAQUINA DESLIGADA PLANEJADA");
+		for (const id of elementsToHide) {
+			const element = document.getElementById(id);
+			if (element) element.setAttribute("visible", "false");
+		}
+		updateMachineDataUI(machineDetails);
+	}
+
+	// INICIO DE OP - TESTAR
+	if(statusPercentage >= 0 && statusPercentage <= 5){
+	    document.getElementById("grandbox").setAttribute("color", `#${stopDetails.color || '00a335'}`);
+	    document.getElementById("status").setAttribute("value", "INICIO DE OP"); //pode ser "INICIO DE OP" OU "TROCA DE OP"
+	    // document.getElementById("item").setAttribute("value", stopDetails.name);
+	    updateMachineDataUI(machineDetails);
+	}
+
+	// TROCA DE OP - TESTAR
+	if(statusPercentage > 95){
+	    document.getElementById("grandbox").setAttribute("color", `#${stopDetails.color || '00a335'}`);        
+	    document.getElementById("status").setAttribute("value", "TROCA DE OP"); //pode ser "INICIO DE OP" OU "TROCA DE OP"
+	    updateMachineDataUI(machineDetails);
+	}
+}
